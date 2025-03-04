@@ -1,4 +1,4 @@
-# Advance Optimization Theory
+# Advanced Optimization
 
 先进优化理论课程的作业
 
