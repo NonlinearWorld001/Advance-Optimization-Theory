@@ -2,7 +2,7 @@ from pyomo.environ import *
 import pandas as pd
 from copt_pyomo import *
 
-data = pd.read_excel('作业-1\Assign1_data.xlsx', header=0, names=['y', 'x1', 'x2', 'x3'])
+data = pd.read_excel('assignment-1\Assign1_data.xlsx', header=0, names=['y', 'x1', 'x2', 'x3'])
 
 # print("数据列名:", data.columns.tolist())
 # print("前3行数据:\n", data.head(3))
@@ -14,15 +14,14 @@ w1_fixed = [0.5767, 0.1875, -0.1472, 0.1251]
 b11_fixed = -0.0895
 M = 1000000 # big M
 
-
 model = ConcreteModel()
 
 # hiden layer: weight and bias
-model.w0 = Var(range(4), range(3), bounds=(-M, M))
-model.b0 = Var(range(4), bounds=(-M, M))
+model.w0 = Var(range(4), range(3), bounds=(-M, M), within=Reals)
+model.b0 = Var(range(4), bounds=(-M, M), within=Reals)
 
 # Integer variable
-model.delta = Var(range(4), range(427), within=Binary)
+model.delta = Var(range(4), range(427), bounds=(0, 1))
 # constraint variable
 model.h = Var(range(4), range(427), bounds=(0, M))
 model.z = Var(range(4), range(427), bounds=(-M, M))
@@ -76,15 +75,17 @@ if result.solver.status == SolverStatus.ok:
     for i in range(4):
         for j in range(3):
             print(f"w0[{i},{j}] = {value(model.w0[i,j])}")
+    print("\n")
     for i in range(4):
-        print(f"\nb0[{i}] = {value(model.b0[i])}")    
+        print(f"b0[{i}] = {value(model.b0[i])}")    
 else:
     print("未找到全局最优解")
     print("当前解为：\n")
     for i in range(4):
         for j in range(3):
             print(f"w0[{i},{j}] = {value(model.w0[i,j])}")
+    print("\n")
     for i in range(4):
-        print(f"\nb0[{i}] = {value(model.b0[i])}")
+        print(f"b0[{i}] = {value(model.b0[i])}")
     print("当前解的目标函数值为：\n", model.obj())
-    print("下界为：\n", result.problem.lower_bound)
+    print("下界为：", result.problem.lower_bound)
