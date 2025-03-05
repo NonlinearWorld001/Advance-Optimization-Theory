@@ -12,7 +12,7 @@ x0 = data.iloc[:, 1:4].values.T  # shape: (3,427)
 
 w1_fixed = [0.5767, 0.1875, -0.1472, 0.1251]
 b11_fixed = -0.0895
-M = 1000 # big M
+M = 1000000 # big M
 
 
 model = ConcreteModel()
@@ -66,13 +66,25 @@ model.obj = Objective(rule=obj_func, sense=minimize)
 
 # solve model
 solver = SolverFactory('copt_direct')
-solver.options['TimeLimit'] = 100
+solver.options['TimeLimit'] = 150
 result = solver.solve(model, tee=True)
 
 # print results
 if result.solver.status == SolverStatus.ok:
-    print("求解成功，全局最优解为：\n", model.obj())
+    print("求解成功，全局最优目标函数值为：\n", model.obj())
+    print("全局最优解为：\n")
+    for i in range(4):
+        for j in range(3):
+            print(f"  w0[{i},{j}] = {value(model.w0[i,j])}")
+    for i in range(4):
+        print(f"b0[{i}] = {value(model.b0[i])}")    
 else:
     print("未找到全局最优解")
-    print("当前最优解为：\n", model.obj())
-    print("下界为：\n", model.problem.lower_bound)
+    print("当前解为：\n")
+    for i in range(4):
+        for j in range(3):
+            print(f"  w0[{i},{j}] = {value(model.w0[i,j])}")
+    for i in range(4):
+        print(f"b0[{i}] = {value(model.b0[i])}")
+    print("当前解的目标函数值为：\n", model.obj())
+    print("下界为：\n", result.problem.lower_bound)
