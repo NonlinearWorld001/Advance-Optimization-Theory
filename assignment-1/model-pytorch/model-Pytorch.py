@@ -7,6 +7,8 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 
+import time 
+
 
 def load_data(path, bzs=32):
     # load data
@@ -39,7 +41,7 @@ class ANN_model(nn.Module):
     
 
 # training function
-def train(loader, epochs=1000, lr=0.0001):
+def train(loader, epochs=1000, lr=0.001):
     model = ANN_model()
     # define loss function and optimizer
     loss_fn = nn.MSELoss()
@@ -64,7 +66,7 @@ def train(loader, epochs=1000, lr=0.0001):
             best_model_state = model.state_dict()
 
     model.load_state_dict(best_model_state)
-    return model
+    return model, best_loss
 
 # save model
 def save_model(model, path):
@@ -85,10 +87,15 @@ def predict(model, x):
     
 def main():
     # load data
+    t1 = time.time()
     dataloader = load_data('assignment-1\Assign1_data.xlsx', bzs=64)
 
     # train model
-    model = train(dataloader, epochs=1000, lr=0.001)
+    model, best_loss = train(dataloader, epochs=1000, lr=0.001)
+
+    t2 = time.time()
+    print(f"训练时间：{t2 - t1:.2f}秒")
+    print(f"最小损失：{best_loss:.6f}")
 
     # save model
     save_model(model,'assignment-1\model-pytorch\\trained_model.pth')
