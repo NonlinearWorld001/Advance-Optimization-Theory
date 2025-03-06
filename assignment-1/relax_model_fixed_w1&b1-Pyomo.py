@@ -12,19 +12,20 @@ x0 = data.iloc[:, 1:4].values.T  # shape: (3,427)
 
 w1_fixed = [0.5767, 0.1875, -0.1472, 0.1251]
 b11_fixed = -0.0895
-M = 1000000 # big M
+M = 10000000 # big M
+
 
 model = ConcreteModel()
 
 # hiden layer: weight and bias
-model.w0 = Var(range(4), range(3), bounds=(-M, M), within=Reals)
-model.b0 = Var(range(4), bounds=(-M, M), within=Reals)
+model.w0 = Var(range(4), range(3), within=Reals)
+model.b0 = Var(range(4), within=Reals)
 
 # Integer variable
-model.delta = Var(range(4), range(427), bounds=(0, 1))
+model.delta = Var(range(4), range(427), within=Reals)
 # constraint variable
-model.h = Var(range(4), range(427), bounds=(0, M))
-model.z = Var(range(4), range(427), bounds=(-M, M))
+model.h = Var(range(4), range(427), within=NonNegativeReals)
+model.z = Var(range(4), range(427), within=Reals)
 
 # objective function
 def obj_func(model):
@@ -52,12 +53,12 @@ model.ReLU_cons2 = Constraint(range(4), range(427), rule=ReLU_constraint_rule2)
 
 # ReLU_cons3: h < z + (1-delta) * M
 def ReLU_constraint_rule3(model, j, k):
-    return model.h[j,k] <= model.z[j,k] + (1 - model.delta[j,k]) * M
+    return model.h[j,k] <= model.z[j,k] + model.delta[j,k] * M
 model.ReLU_cons3 = Constraint(range(4), range(427), rule=ReLU_constraint_rule3)
 
 # ReLU_cons4: h <= M * delta
 def ReLU_constraint_rule4(model, j, k):
-    return model.h[j,k] <= M * model.delta[j,k]
+    return model.h[j,k] <= M * (1 - model.delta[j,k])
 model.ReLU_cons4 = Constraint(range(4), range(427), rule=ReLU_constraint_rule4)
 
 # set objective function
@@ -65,7 +66,7 @@ model.obj = Objective(rule=obj_func, sense=minimize)
 
 # solve model
 solver = SolverFactory('copt_direct')
-solver.options['TimeLimit'] = 150
+solver.options['TimeLimit'] = 100
 result = solver.solve(model, tee=True)
 
 # print results
@@ -75,7 +76,6 @@ if result.solver.status == SolverStatus.ok:
     for i in range(4):
         for j in range(3):
             print(f"w0[{i},{j}] = {value(model.w0[i,j])}")
-    print("\n")
     for i in range(4):
         print(f"b0[{i}] = {value(model.b0[i])}")    
 else:
@@ -84,8 +84,7 @@ else:
     for i in range(4):
         for j in range(3):
             print(f"w0[{i},{j}] = {value(model.w0[i,j])}")
-    print("\n")
     for i in range(4):
         print(f"b0[{i}] = {value(model.b0[i])}")
     print("当前解的目标函数值为：\n", model.obj())
-    print("下界为：", result.problem.lower_bound)
+    print("下界为：\n", result.problem.lower_bound)
